@@ -1,19 +1,16 @@
 {
   "name": "json-from-schema",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generates random JSON using a JSON schema",
   "main": "json_from_schema.js",
   "scripts": {
     "test": "mocha --reporter spec --require chai --ui bdd --recursive --colors --timeout 2000"
   },
-
   "repository": {
     "type": "git",
     "url": "git://github.com/ORBAT/json-from-schema.git"
   },
-
   "homepage": "https://github.com/ORBAT/json-from-schema",
-
   "keywords": [
     "json",
     "schema",
@@ -23,13 +20,11 @@
   ],
   "author": "Tom Eklöf <tom.eklof+npmjs@gmail.com> (http://github.com/ORBAT/)",
   "license": "MIT",
-
   "dependencies": {
     "json-ptr": "0.1.1",
     "randexp": "0.3.4",
     "lodash": "~2.4"
   },
-
   "devDependencies": {
     "mocha": "^1.18",
     "chai": "^1.9",
