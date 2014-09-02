@@ -5,6 +5,7 @@
 var _ = require('lodash');
 var ptr = require('json-ptr');
 var RandExpr = require('randexp');
+var util = require('util');
 
 function JsonFromSchema(schemas) {
   this._schemas = _.reduce(schemas, function (acc, schema) {
@@ -62,9 +63,13 @@ JsonFromSchema.prototype._resolveRefs = exports._resolveRefs = function _resolve
   });
 
 };
+var ipv6re = /(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}))/;
 
 JsonFromSchema.prototype._generators = {
-  '_randomNumber': function _randomNumber(schema, options) {
+
+  '_ipv6randExp': new RandExpr(ipv6re)
+
+  , '_randomNumber': function _randomNumber(schema, options) {
     options = options || {};
     var integer = schema.type === 'integer'
       , minimum = schema.minimum || (integer ? -MAX_INT : -MAX_INT*0.671)// note: just random constants to make float generation work
@@ -85,6 +90,18 @@ JsonFromSchema.prototype._generators = {
     return !!_.random(1);
   }
 
+  , '_format': function(schema, options) {
+    switch (schema.format) {
+      case 'ipv4':
+        return util.format("%s.%s.%s.%s", _.random(0, 255), _.random(0, 255), _.random(0, 255), _.random(0, 255));
+      break;
+      case 'ipv6':
+        return this._ipv6randExp.gen();
+      default: // unsupported format, so just return a plain 'ol string for now. This'll probably fail schema verification
+        return this.string(_.omit(schema, 'format'));
+    }
+  }
+
   , 'string': function(schema, options) {
     options = options || {};
     schema = schema || {};
@@ -95,6 +112,10 @@ JsonFromSchema.prototype._generators = {
 
     if (schema.enum) {
       return this.enum(schema);
+    }
+
+    if(schema.format) {
+      return this._format(schema, options);
     }
 
     if (schema.pattern) {

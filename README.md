@@ -50,5 +50,40 @@ var sampleDerp = gen.generate('http://www.example.com/derp'); // note: no hash a
 
 var sampleHerp = gen.generate('http://www.example.com/herp');
 
-
 ```
+
+# Supported
+
+* $ref (JSON pointers and schema URIs)
+* string
+  * pattern
+  * format
+    * ipv4
+    * ipv6
+* array
+  * maxItems
+  * minItems
+* number
+* integer
+* boolean
+* enum
+* object
+  * properties
+  * patternProperties
+  * required
+  * additionalProperties
+
+# TODO
+
+* array
+  * uniqueItems
+* object
+  * dependencies
+  * maxProperties
+  * minProperties
+* oneOf
+* anyOf
+* allOf
+* not
+* string
+  * more formats

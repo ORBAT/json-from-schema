@@ -17,9 +17,11 @@
   "keywords": [
     "json",
     "schema",
-    "random"
+    "random",
+    "generator",
+    "json-schema"
   ],
-  "author": "Tom Eklöf (http://github.com/ORBAT/)",
+  "author": "Tom Eklöf <tom.eklof+npmjs@gmail.com> (http://github.com/ORBAT/)",
   "license": "MIT",
 
   "dependencies": {

@@ -305,7 +305,9 @@ describe("JSON from schema", function() {
           , type: "object"
           , properties: {
             herps: {type: "array", items: {$ref: 'http://www.example.com/herp'}, minItems: 1, maxItems: 3}
+            , ip: {type: "string", format: "ipv4"}
           }
+          , required: ['herps', 'ip']
         };
         // clone so z-schema's __$.* properties don't end up in the schemas themselves
         zs.validateSchema([_.cloneDeep(schema1), _.cloneDeep(schema2)]).should.be.true;
