@@ -2,7 +2,7 @@
   "name": "json-from-schema",
   "version": "1.1.0",
   "description": "Generates random JSON using a JSON schema",
-  "main": "json_from_schema.js",
+  "main": "json-from-schema.js",
   "scripts": {
     "test": "mocha --reporter spec --require chai --ui bdd --recursive --colors --timeout 2000"
   },
