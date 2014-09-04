@@ -23,11 +23,11 @@
   "dependencies": {
     "json-ptr": "0.1.1",
     "randexp": "0.3.4",
-    "lodash": "~2.4"
+    "lodash": "^2.4"
   },
   "devDependencies": {
     "mocha": "^1.18",
     "chai": "^1.9",
-    "z-schema": "~3.0"
+    "z-schema": "^3.0"
   }
 }
