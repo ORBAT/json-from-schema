@@ -75,11 +75,11 @@ JsonFromSchema.prototype._generators = {
       , minimum = schema.minimum || (integer ? -MAX_INT : -MAX_INT*0.671)// note: just random constants to make float generation work
       , maximum = schema.maximum || (integer ? MAX_INT : MAX_INT*0.5663);
 
-    if (options.exclusiveMinimum && integer) { // TODO: floats
+    if (schema.exclusiveMinimum && integer) { // TODO: floats
       minimum += 1;
     }
 
-    if (options.exclusiveMaximum && integer) { // TODO: floats
+    if (schema.exclusiveMaximum && integer) { // TODO: floats
       maximum -= 1;
     }
 
@@ -98,7 +98,7 @@ JsonFromSchema.prototype._generators = {
       case 'ipv6':
         return this._ipv6randExp.gen();
       default: // unsupported format, so just return a plain 'ol string for now. This'll probably fail schema verification
-        return this.string(_.omit(schema, 'format'));
+        return this.string(_.omit(schema, 'format'), options);
     }
   }
 
@@ -107,8 +107,10 @@ JsonFromSchema.prototype._generators = {
     schema = schema || {};
     var minCharCode = options.minCharCode || 32
       , maxCharCode = options.maxCharCode || 126
+      , charSet = options.charSet
       , minLength = schema.minLength || 0
-      , maxLength = schema.maxLength || 32;
+      , maxLength = schema.maxLength || 32
+      ;
 
     if (schema.enum) {
       return this.enum(schema);
@@ -128,10 +130,16 @@ JsonFromSchema.prototype._generators = {
       return re.gen();
     }
 
-    var charCodes = _.times(_.random(minLength, maxLength), function () {
-      return _.random(minCharCode, maxCharCode);
-    });
-    return String.fromCharCode.apply(null, charCodes);
+    if(charSet && _.isArray(charSet)) {
+      return _.times(_.random(minLength, maxLength), function () {
+        return _.sample(charSet);
+      }).join('');
+    } else {
+      var charCodes = _.times(_.random(minLength, maxLength), function () {
+        return _.random(minCharCode, maxCharCode);
+      });
+      return String.fromCharCode.apply(null, charCodes);
+    }
   }
 
   , 'number': function(schema, options) {
@@ -171,15 +179,16 @@ JsonFromSchema.prototype._generators = {
       _.partial(this.array, {items: {type: 'integer'}})
       , _.partial(this.array, {items: {type: 'number'}})
       , _.partial(this.array, {items: {type: 'string'}})
-      , this.string
-      , this.integer
-      , this.number
+      , _.partial(this.string, {minLength: 0, maxLength: 15})
+      , _.partial(this._randomNumber, {type: 'integer'})
+      , _.partial(this._randomNumber, {type: 'number'})
+
     ];
 
     return _(_.times(numKeys, function () {
-      return self.string();
+      return self.string({minLength: 1, maxLength: 15}, options);
     })).reduce(function (acc, key) {
-        acc[key] = _.sample(gens).apply(self);
+        acc[key] = _.sample(gens).call(self, options);
         return acc;
       }, {}).valueOf();
   }
