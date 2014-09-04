@@ -241,6 +241,22 @@ JsonFromSchema.prototype._generators = {
   }
 };
 
+/**
+ *
+ * Generates random JSON objects according to a JSON schema.
+ *
+ * @param {String} schemaId ID of schema to generate (*without* the hash at the end)
+ * @param {Object} [options]
+ *   options.minCharCode and options.maxCharCode (integers): random strings are generated so that the character codes are between these two values
+ *
+ * options.charSet (array): generate random strings using this character set. Each element of the array should be a single character.
+ *
+ * options.minRandomKeys and options.maxRandomKeys (integers): the minimum and maximum number of randomly generated keys an object can have when additionalProperties is true
+ *
+ * options.minPatternProperties and options.maxPatternProperties (integers): minimum and maximum number of pattern properties to randomly generate
+ *
+ * @returns {object} randomly generated JSON object that complies with given schema
+ */
 JsonFromSchema.prototype.generate = function generate(schemaId, options) {
   var schema = this._schemas[schemaId];
 
@@ -252,4 +268,9 @@ JsonFromSchema.prototype.generate = function generate(schemaId, options) {
   return this._generators[type](schema, options);
 };
 
+/**
+ * Creates a new instance of JsonFromSchema
+ * @param {Array} schemas Register these schemas.
+ * @constructor
+ */
 exports.JsonFromSchema = JsonFromSchema;
