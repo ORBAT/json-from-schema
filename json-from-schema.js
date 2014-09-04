@@ -203,6 +203,7 @@ JsonFromSchema.prototype._generators = {
       , props = schema.properties && Object.keys(schema.properties) || []
       , patternProps = schema.patternProperties && Object.keys(schema.patternProperties) || []
       , additionals = "additionalProperties" in schema ? !!schema.additionalProperties : true
+      , minPatternProps = options.minPatternProps || 0
       , maxPatternProps = options.maxPatternProps || 10
       , nonRequiredProps = _.difference(props, required)
       // generate all required properties plus a random amount of non-required properties
@@ -217,7 +218,7 @@ JsonFromSchema.prototype._generators = {
     }, {});
 
     if(patternProps.length) {
-      var nPats = _.random(maxPatternProps);
+      var nPats = _.random(minPatternProps, maxPatternProps);
 
       var ppObj = _(_.times(nPats, function () {
         return _.sample(patternProps);
