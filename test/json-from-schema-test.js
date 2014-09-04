@@ -139,17 +139,18 @@ describe("JSON from schema", function() {
   });
 
   describe('generators', function () {
+    var gen;
+    beforeEach(function () {
+      gen = new jfs.JsonFromSchema();
+    });
+
     it('should generate booleans', function () {
-      var gen = new jfs.JsonFromSchema();
       gen._generators.boolean().should.be.a('boolean');
     });
 
     it('should generate numbers', function () {
-      var gen = new jfs.JsonFromSchema();
-
-      var nums = [];
-      _.times(20, function () {
-        nums.push(gen._generators.number({type: 'number', minimum: 13.5, maximum: 22.6}));
+      var nums = _.times(20, function () {
+        return gen._generators.number({type: 'number', minimum: 13.5, maximum: 22.6});
       });
 
       _.each(nums, function (num) {
@@ -160,10 +161,8 @@ describe("JSON from schema", function() {
     });
 
     it('should generate integers', function () {
-      var gen = new jfs.JsonFromSchema();
-      var ints = [];
-      _.times(20, function () {
-        ints.push(gen._generators.integer({type: 'integer', minimum: -500, maximum: 500}));
+      var ints = _.times(20, function () {
+        return gen._generators.integer({type: 'integer', minimum: -500, maximum: 500});
       });
 
       _.each(ints, function (int) {
@@ -174,10 +173,8 @@ describe("JSON from schema", function() {
     });
 
     it('should generate strings', function () {
-      var gen = new jfs.JsonFromSchema();
-      var strings = [];
-      _.times(20, function () {
-        strings.push(gen._generators.string({minLength: 5, maxLength: 10}));
+      var strings = _.times(20, function () {
+        return gen._generators.string({minLength: 5, maxLength: 10});
       });
 
       _.each(strings, function (str) {
@@ -186,13 +183,30 @@ describe("JSON from schema", function() {
       });
     });
 
+    it('should generate strings with custom character sets', function () {
+      var charSet = _(_.union(_.range(48, 58), _.range(65, 91), _.range(97, 123))).map(function(n) {
+        return String.fromCharCode(n);
+      }).valueOf();
+
+      var strings = _.times(20, function () {
+        return gen._generators.string({minLength: 10, maxLength: 10}, {charSet: charSet});
+      });
+
+      var notInCharSet = _(_.map(strings, function (str) {
+        return _.reject(str, function (ch) {
+          return _.contains(charSet, ch);
+        });
+      })).reduce(function(acc, str) {
+          return acc + str.length;
+        }, 0).valueOf();
+      notInCharSet.should.equal(0);
+    });
+
     it("should generate strings with patterns", function () {
-      var gen = new jfs.JsonFromSchema();
-      var strings = [];
       var pat = '^\\d{1,4}x\\d{1,4}$';
       var regExp = new RegExp(pat);
-      _.times(20, function () {
-        strings.push(gen._generators.string({minLength: 5, maxLength: 10, pattern: pat}));
+      var strings = _.times(20, function () {
+        return gen._generators.string({minLength: 5, maxLength: 10, pattern: pat});
       });
 
       _.each(strings, function (str) {
@@ -202,10 +216,9 @@ describe("JSON from schema", function() {
 
     it("should generate enums", function () {
       var gen = new jfs.JsonFromSchema();
-      var enums = [];
       var enumSet = ['herp', 'derp', 'hurr', 'durr'];
-      _.times(20, function () {
-        enums.push(gen._generators.enum({enum: enumSet}));
+      var enums = _.times(20, function () {
+        return gen._generators.enum({enum: enumSet});
       });
 
       _.each(enums, function (str) {
@@ -317,6 +330,7 @@ describe("JSON from schema", function() {
         });
 
         _.each(objs, function (obj) {
+          console.log("obj", util.inspect(obj, {depth: 5}));
           var ok = zs.validate(obj, schema2);
           if(!ok) {
             console.log("%s\nschema validation error: %s", util.inspect(obj, {depth: 5}), util.inspect(zs.getLastErrors(), {depth: 5}));
