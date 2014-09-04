@@ -71,7 +71,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * properties
   * patternProperties
   * required
-  * additionalProperties
+  * additionalProperties (boolean only for now)
 
 # TODO
 
@@ -81,6 +81,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * dependencies
   * maxProperties
   * minProperties
+  * additionalProperties
 * oneOf
 * anyOf
 * allOf
