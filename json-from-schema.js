@@ -63,6 +63,8 @@ JsonFromSchema.prototype._resolveRefs = exports._resolveRefs = function _resolve
   });
 
 };
+
+// this monstrosity is based on https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
 var ipv6re = /(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}))/;
 
 JsonFromSchema.prototype._generators = {
@@ -83,7 +85,7 @@ JsonFromSchema.prototype._generators = {
       maximum -= 1;
     }
 
-    return _.random(minimum, maximum, schema.type === 'number');
+    return _.random(minimum, maximum, !integer);
   }
 
   , 'boolean': function () {
