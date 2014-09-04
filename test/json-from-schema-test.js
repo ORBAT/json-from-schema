@@ -330,7 +330,6 @@ describe("JSON from schema", function() {
         });
 
         _.each(objs, function (obj) {
-          console.log("obj", util.inspect(obj, {depth: 5}));
           var ok = zs.validate(obj, schema2);
           if(!ok) {
             console.log("%s\nschema validation error: %s", util.inspect(obj, {depth: 5}), util.inspect(zs.getLastErrors(), {depth: 5}));
