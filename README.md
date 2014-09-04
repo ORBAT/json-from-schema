@@ -52,6 +52,15 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
 
 ```
 
+## generate() options
+
+`generate()` takes an options object as its second parameter. The following options are supported:
+
+* `minCharCode` and `maxCharCode` (integers): random strings are generated so that the character codes are between these two values
+* `charSet` (array): generate random strings using this character set. Each element of the array should be a single character.
+* `minRandomKeys` and `maxRandomKeys` (integers): the minimum and maximum number of randomly generated keys an object can have when additionalProperties is true
+* `minPatternProperties` and `maxPatternProperties` (integers): minimum and maximum number of pattern properties to randomly generate
+
 # Supported
 
 * $ref (JSON pointers and schema URIs)
