@@ -8,7 +8,7 @@ var jfs = require('../json-from-schema');
 var ZSchema = require('z-schema');
 var zs = new ZSchema();
 var util = require('util');
-
+var ins = _.partialRight(util.inspect, {depth: 5});
 describe("JSON from schema", function() {
 
   describe('$ref resolution', function () {
@@ -272,7 +272,7 @@ describe("JSON from schema", function() {
         _.each(objs, function (obj) {
           var ok = zs.validate(obj, schema);
           if(!ok) {
-            console.log("%s\nschema validation error: %s", util.inspect(obj, {depth: 5}), util.inspect(zs.getLastErrors(), {depth: 5}));
+            console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
           }
           ok.should.be.true;
         });
@@ -330,7 +330,7 @@ describe("JSON from schema", function() {
         _.each(objs, function (obj) {
           var ok = zs.validate(obj, schema2);
           if(!ok) {
-            console.log("%s\nschema validation error: %s", util.inspect(obj, {depth: 5}), util.inspect(zs.getLastErrors(), {depth: 5}));
+            console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
           }
           ok.should.be.true;
         });
