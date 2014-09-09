@@ -9,6 +9,18 @@ var ZSchema = require('z-schema');
 var zs = new ZSchema();
 var util = require('util');
 var ins = _.partialRight(util.inspect, {depth: 5});
+
+
+function _validate(these, schema) {
+  _.each(these, function (item) {
+    var ok = zs.validate(item, schema);
+    if(!ok) {
+      console.log("%s\nschema validation error: %s", ins(item), ins(zs.getLastErrors()));
+    }
+    ok.should.be.true;
+  });
+}
+
 describe("JSON from schema", function() {
 
   describe('$ref resolution', function () {
@@ -138,6 +150,41 @@ describe("JSON from schema", function() {
 
   });
 
+
+  describe('formatters', function () {
+    var gen;
+    beforeEach(function () {
+      gen = new jfs.JsonFromSchema();
+    });
+
+    it('should generate ipv6 addresses', function () {
+      var schema = {type: 'string', format: 'ipv6'};
+      var ipv6s = _.times(20, function () {
+        return gen._generators.string(schema);
+      });
+
+      _validate(ipv6s, schema);
+    });
+
+    it('should generate ipv4 addresses', function () {
+      var schema = {type: 'string', format: 'ipv4'};
+      var ipv4s = _.times(20, function () {
+        return gen._generators.string(schema);
+      });
+      _validate(ipv4s, schema);
+    });
+
+    it('should generate date-times', function() {
+      var schema = {type: 'string', format: 'date-time'};
+      var dates = _.times(20, function () {
+        return gen._generators.string(schema);
+      });
+
+      _validate(dates, schema);
+    })
+
+  });
+
   describe('generators', function () {
     var gen;
     beforeEach(function () {
@@ -149,38 +196,29 @@ describe("JSON from schema", function() {
     });
 
     it('should generate numbers', function () {
+      var schema = {type: 'number', minimum: 13.5, maximum: 22.6};
       var nums = _.times(20, function () {
-        return gen._generators.number({type: 'number', minimum: 13.5, maximum: 22.6});
+        return gen._generators.number(schema);
       });
-
-      _.each(nums, function (num) {
-        num.should.be.a('number');
-        num.should.be.above(13.5);
-        num.should.be.below(22.6);
-      });
+      _validate(nums, schema);
     });
 
     it('should generate integers', function () {
+      var schema = {type: 'integer', minimum: -500, maximum: 500};
       var ints = _.times(20, function () {
-        return gen._generators.integer({type: 'integer', minimum: -500, maximum: 500});
+        return gen._generators.integer(schema);
       });
 
-      _.each(ints, function (int) {
-        int.should.be.a('number');
-        int.should.be.above(-501);
-        int.should.be.below(501);
-      });
+      _validate(ints, schema);
     });
 
     it('should generate strings', function () {
+      var schema = {type: 'string', minLength: 5, maxLength: 10};
       var strings = _.times(20, function () {
-        return gen._generators.string({minLength: 5, maxLength: 10});
+        return gen._generators.string(schema);
       });
 
-      _.each(strings, function (str) {
-        str.should.have.length.above(4);
-        str.should.have.length.below(11);
-      });
+      _validate(strings, schema);
     });
 
     it('should generate strings with custom character sets', function () {
@@ -188,8 +226,10 @@ describe("JSON from schema", function() {
         return String.fromCharCode(n);
       }).valueOf();
 
+      var schema = {type: 'string', minLength: 10, maxLength: 10};
+
       var strings = _.times(20, function () {
-        return gen._generators.string({minLength: 10, maxLength: 10}, {charSet: charSet});
+        return gen._generators.string(schema, {charSet: charSet});
       });
 
       var notInCharSet = _(_.map(strings, function (str) {
@@ -203,26 +243,22 @@ describe("JSON from schema", function() {
     });
 
     it("should generate strings with patterns", function () {
-      var pat = '^\\d{1,4}x\\d{1,4}$';
-      var regExp = new RegExp(pat);
+      var schema = {type: 'string', pattern: '^\\d{1,4}x\\d{1,4}$'};
       var strings = _.times(20, function () {
-        return gen._generators.string({minLength: 5, maxLength: 10, pattern: pat});
+        return gen._generators.string(schema);
       });
 
-      _.each(strings, function (str) {
-        (!!str.match(regExp)).should.be.true;
-      });
+      _validate(strings, schema);
     });
 
     it("should generate enums", function () {
       var enumSet = ['herp', 'derp', 'hurr', 'durr'];
+      var schema = {enum: enumSet};
       var enums = _.times(20, function () {
-        return gen._generators.enum({enum: enumSet});
+        return gen._generators.enum(schema);
       });
 
-      _.each(enums, function (str) {
-        _.contains(enumSet, str).should.be.true;
-      });
+      _validate(enums, schema);
     });
 
     it("should generate random objects", function () {
@@ -230,6 +266,37 @@ describe("JSON from schema", function() {
       _.isPlainObject(obj).should.be.true;
       _.keys(obj).length.should.be.above(4);
       _.keys(obj).length.should.be.below(16);
+    });
+
+    it('should handle anyOf', function () {
+      var schema = {
+        id: 'cor'
+        , type: 'object'
+        , additionalProperties: false
+        , required: ['one1', 'one2']
+        , properties: {
+          one1: {
+            anyOf: [
+              {'enum': ['hng', 'yoink']}
+              , {type: 'string', pattern: "[a-z]{1,5}"}
+            ]
+          }
+
+          , one2: {
+            type: 'string'
+            , anyOf: [
+              {minLength: 5, maxLength: 5}
+              , {pattern: "[10]{1,10}"}
+            ]
+          }
+        }
+      };
+
+      var objs = _.times(20, function () {
+        return gen._generators._generate(schema, {});
+      });
+
+      _validate(objs, schema);
     });
 
     it('should handle oneOf', function () {
@@ -260,14 +327,7 @@ describe("JSON from schema", function() {
         return gen._generators._generate(schema, {});
       });
 
-      _.each(objs, function (obj) {
-        var ok = zs.validate(obj, schema);
-        if(!ok) {
-          console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
-        }
-        ok.should.be.true;
-      });
-
+      _validate(objs, schema);
     });
 
     describe('object generation', function () {
@@ -307,14 +367,7 @@ describe("JSON from schema", function() {
           return gen.generate('herp');
         });
 
-        _.each(objs, function (obj) {
-          var ok = zs.validate(obj, schema);
-          if(!ok) {
-            console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
-          }
-          ok.should.be.true;
-        });
-
+        _validate(objs, schema);
       });
 
       it('should generate objects with schema references', function () {
@@ -365,13 +418,7 @@ describe("JSON from schema", function() {
           return gen.generate('http://www.example.com/derp');
         });
 
-        _.each(objs, function (obj) {
-          var ok = zs.validate(obj, schema2);
-          if(!ok) {
-            console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
-          }
-          ok.should.be.true;
-        });
+        _validate(objs, schema2);
 
       });
 

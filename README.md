@@ -84,6 +84,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * required
   * additionalProperties (boolean)
 * oneOf
+* anyOf
 
 # TODO
 
@@ -98,7 +99,6 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * maxProperties
   * minProperties
   * additionalProperties (schema)
-* anyOf
 * allOf
 * not
 * string
