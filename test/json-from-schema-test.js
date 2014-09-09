@@ -232,6 +232,44 @@ describe("JSON from schema", function() {
       _.keys(obj).length.should.be.below(16);
     });
 
+    it('should handle oneOf', function () {
+      var schema = {
+        id: 'cor'
+        , type: 'object'
+        , additionalProperties: false
+        , required: ['one1', 'one2']
+        , properties: {
+          one1: {
+            oneOf: [
+              {type: 'string', minLength: 5, maxLength:10}
+              , {type: 'integer', minimum: 0, maximum: 100}
+            ]
+          }
+
+          , one2: {
+            type: 'string'
+            , oneOf: [
+              {pattern: "(wub){1,10}"}
+              , {pattern: "q{1,10}"}
+            ]
+          }
+        }
+      };
+
+      var objs = _.times(20, function () {
+        return gen._generators._generate(schema, {});
+      });
+
+      _.each(objs, function (obj) {
+        var ok = zs.validate(obj, schema);
+        if(!ok) {
+          console.log("%s\nschema validation error: %s", ins(obj), ins(zs.getLastErrors()));
+        }
+        ok.should.be.true;
+      });
+
+    });
+
     describe('object generation', function () {
       it('should generate objects (no schema references)', function () {
         var schema = {
