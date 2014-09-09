@@ -64,6 +64,9 @@ function JsonFromSchema(schemas) {
   _.each(this._schemas, function (schema) {
     _resolveRefs(schema, self._schemas);
   });
+
+  this._generators = _.cloneDeep(_generators);
+
 }
 
 // JS uses double precision floats (52 bits in the mantissa), so the maximum representable integer is 2^52
@@ -72,9 +75,41 @@ var MAX_INT = Math.pow(2, 52);
 // this monstrosity is based on https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
 var ipv6re = /(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}))/;
 
+function _pad(num) {
+  if(num < 10) {
+    return "0" + num;
+  }
+  return num.toString();
+}
+
+var _ipv6randExp = new RandExpr(ipv6re)
+
+var _formatters = {
+
+
+  'ipv4': function ipv4(schema, options) {
+    return util.format("%s.%s.%s.%s", _.random(1, 255), _.random(0, 255), _.random(0, 255), _.random(0, 255));
+  }
+
+  , 'ipv6': function ipv6(schema, options) {
+    return _ipv6randExp.gen();
+  }
+
+  , 'date-time': function dateTime(schema, options) {
+    var ts = _.random(-1000000000000, Date.now());
+    var isoStr = new Date(ts).toISOString();
+    if(Math.random() < 0.5) {
+      var offset = Math.random() < 0.5 ? '+' : '-';
+      offset += _pad(_.random(0, 23)) + ":" + _pad(_.random(0, 59));
+      isoStr = isoStr.substring(0, isoStr.length - 1) + offset;
+    }
+    return isoStr;
+  }
+};
+
 var _generators = {
 
-  '_ipv6randExp': new RandExpr(ipv6re)
+  '_formatters': _formatters
 
   , '_randomNumber': function _randomNumber(schema, options) {
     options = options || {};
@@ -102,15 +137,13 @@ var _generators = {
   }
 
   , '_format': function _format(schema, options) {
-    switch (schema.format) {
-      case 'ipv4':
-        return util.format("%s.%s.%s.%s", _.random(0, 255), _.random(0, 255), _.random(0, 255), _.random(0, 255));
-      break;
-      case 'ipv6':
-        return this._ipv6randExp.gen();
-      default: // unsupported format, so just return a plain 'ol string for now. This'll probably fail schema verification
-        return this.string(_.omit(schema, 'format'), options);
+    var format = schema.format;
+    if(this._formatters[format]) {
+      return this._formatters[format](schema, options);
     }
+
+    // unsupported format, so just return a plain 'ol string for now. This'll probably fail schema verification
+    return this.string(_.omit(schema, 'format'), options);
   }
 
   , 'string': function string(schema, options) {
@@ -252,25 +285,31 @@ var _generators = {
 
 };
 
-_generators._generate = _oneOfDecorator.bind(_generators)(function _generate(schema, options) {
+_generators._generate = _oneOfDecorator(function _generate(schema, options) {
   schema = schema || {};
   options = options || {};
   var type = this._type(schema);
   return this[type](schema, options);
 });
 
-JsonFromSchema.prototype._generators = _generators;
 
+/**
+ * Decorates a function(schema, options) so that it can handle anyOf/oneOf.
+ * This is done by picking a random schema from the anyOf/oneOf array, merging it with the containing schema and then
+ * calling the base function with the merged schema (sans the oneOf/anyOf array)
+ *
+ * @param {Function} base a function with the signature function(schema, options)
+ * @returns {Function} the base function with oneOf/anyOf functionality
+ * @private
+ */
 function _oneOfDecorator(base) {
-  var self = this;
   return function _oneOf(schema, options) {
-    if(schema.oneOf) {
-      var oneOfs = schema.oneOf;
-      var finalSchema = _.merge(_.cloneDeep(schema), _.sample(oneOfs));
-      delete finalSchema.oneOf;
-      return base.call(self, finalSchema, options);
+    if(schema.oneOf || schema.anyOf) {
+      var oneOfs = schema.oneOf || schema.anyOf;
+      var finalSchema = _.omit(_.merge(_.cloneDeep(schema), _.sample(oneOfs)), ['oneOf', 'anyOf']);
+      return base.call(this, finalSchema, options);
     } else {
-      return base.call(self, schema, options);
+      return base.call(this, schema, options);
     }
   }
 }
