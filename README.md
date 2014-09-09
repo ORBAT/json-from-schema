@@ -74,24 +74,30 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * minItems
 * number
 * integer
+  * minimum
+  * maximum
 * boolean
 * enum
 * object
   * properties
   * patternProperties
   * required
-  * additionalProperties (boolean only for now)
+  * additionalProperties (boolean)
+* oneOf
 
 # TODO
 
+* number
+  * exclusiveMinimum / exclusiveMaximum
+* number / integer
+  * multipleOf
 * array
   * uniqueItems
 * object
   * dependencies
   * maxProperties
   * minProperties
-  * additionalProperties
-* oneOf
+  * additionalProperties (schema)
 * anyOf
 * allOf
 * not
