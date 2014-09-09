@@ -215,7 +215,6 @@ describe("JSON from schema", function() {
     });
 
     it("should generate enums", function () {
-      var gen = new jfs.JsonFromSchema();
       var enumSet = ['herp', 'derp', 'hurr', 'durr'];
       var enums = _.times(20, function () {
         return gen._generators.enum({enum: enumSet});
@@ -227,7 +226,6 @@ describe("JSON from schema", function() {
     });
 
     it("should generate random objects", function () {
-      var gen = new jfs.JsonFromSchema();
       var obj = gen._generators._randomObject({minRandomKeys:5, maxRandomKeys: 15});
       _.isPlainObject(obj).should.be.true;
       _.keys(obj).length.should.be.above(4);
