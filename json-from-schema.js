@@ -6,27 +6,9 @@ var _ = require('lodash');
 var ptr = require('json-ptr');
 var RandExpr = require('randexp');
 var util = require('util');
+var ins = _.partialRight(util.inspect, {depth: 5});
 
-function JsonFromSchema(schemas) {
-  this._schemas = _.reduce(schemas, function (acc, schema) {
-    if(!schema.id) {
-      throw new Error("All schemas need ids");
-    }
-    var idLen = schema.id.length;
-    var id = schema.id[idLen - 1] === '#' ? schema.id.substring(0, idLen - 1) : schema.id;
-    acc[id] = _.cloneDeep(schema);
-    return acc;
-  }, {});
-  var self = this;
-  _.each(this._schemas, function (schema) {
-    self._resolveRefs(schema, self._schemas);
-  });
-}
-
-// JS uses double precision floats (52 bits in the mantissa), so the maximum representable integer is 2^52
-var MAX_INT = Math.pow(2, 52);
-
-JsonFromSchema.prototype._resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasByIds, topSchema) {
+var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasByIds, topSchema) {
   function isLocal(ref) {
     return ref[0] === '#';
   }
@@ -47,7 +29,7 @@ JsonFromSchema.prototype._resolveRefs = exports._resolveRefs = function _resolve
 
     if(pointed.$ref) {
       /* if the schema being pointed to isn't the one we started in, topSchema needs to be set to the schema being
-      pointed to so its JSON pointers can be dereferenced properly */
+       pointed to so its JSON pointers can be dereferenced properly */
       _resolveRefs(pointed, schemasByIds, isLocal(pointed.$ref) ? topSchema : pointed);
     }
 
@@ -64,18 +46,41 @@ JsonFromSchema.prototype._resolveRefs = exports._resolveRefs = function _resolve
 
 };
 
+function _default(obj, key, defaultVal) {
+  return key in obj ? obj[key] : defaultVal;
+}
+
+function JsonFromSchema(schemas) {
+  this._schemas = _.reduce(schemas, function (acc, schema) {
+    if(!schema.id) {
+      throw new Error("All schemas need ids");
+    }
+    var idLen = schema.id.length;
+    var id = schema.id[idLen - 1] === '#' ? schema.id.substring(0, idLen - 1) : schema.id;
+    acc[id] = _.cloneDeep(schema);
+    return acc;
+  }, {});
+  var self = this;
+  _.each(this._schemas, function (schema) {
+    _resolveRefs(schema, self._schemas);
+  });
+}
+
+// JS uses double precision floats (52 bits in the mantissa), so the maximum representable integer is 2^52
+var MAX_INT = Math.pow(2, 52);
+
 // this monstrosity is based on https://stackoverflow.com/questions/53497/regular-expression-that-matches-valid-ipv6-addresses
 var ipv6re = /(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}))/;
 
-JsonFromSchema.prototype._generators = {
+var _generators = {
 
   '_ipv6randExp': new RandExpr(ipv6re)
 
   , '_randomNumber': function _randomNumber(schema, options) {
     options = options || {};
     var integer = schema.type === 'integer'
-      , minimum = schema.minimum || (integer ? -MAX_INT : -MAX_INT*0.671)// note: just random constants to make float generation work
-      , maximum = schema.maximum || (integer ? MAX_INT : MAX_INT*0.5663);
+      , minimum = _default(schema, 'minimum', integer ? -MAX_INT : -MAX_INT * 0.671) // note: just random constants to make float generation work
+      , maximum = _default(schema, 'maximum', integer ? MAX_INT : MAX_INT*0.671);
 
     if (schema.exclusiveMinimum && integer) { // TODO: floats
       minimum += 1;
@@ -88,11 +93,15 @@ JsonFromSchema.prototype._generators = {
     return _.random(minimum, maximum, !integer);
   }
 
-  , 'boolean': function () {
+  , '_type': function _type(schema) {
+    return schema.type || schema.enum && 'enum'
+  }
+
+  , 'boolean': function boolean() {
     return !!_.random(1);
   }
 
-  , '_format': function(schema, options) {
+  , '_format': function _format(schema, options) {
     switch (schema.format) {
       case 'ipv4':
         return util.format("%s.%s.%s.%s", _.random(0, 255), _.random(0, 255), _.random(0, 255), _.random(0, 255));
@@ -104,14 +113,14 @@ JsonFromSchema.prototype._generators = {
     }
   }
 
-  , 'string': function(schema, options) {
+  , 'string': function string(schema, options) {
     options = options || {};
     schema = schema || {};
-    var minCharCode = options.minCharCode || 32
-      , maxCharCode = options.maxCharCode || 126
+    var minCharCode = _default(options, 'minCharCode', 32)
+      , maxCharCode = _default(options, 'maxCharCode', 126)
       , charSet = options.charSet
-      , minLength = schema.minLength || 0
-      , maxLength = schema.maxLength || 32
+      , minLength = _default(schema, 'minLength', 0)
+      , maxLength = _default(schema, 'maxLength', 32)
       ;
 
     if (schema.enum) {
@@ -144,38 +153,39 @@ JsonFromSchema.prototype._generators = {
     }
   }
 
-  , 'number': function(schema, options) {
+  , 'number': function number(schema, options) {
     schema = schema || {type: 'number'};
     return this._randomNumber(schema, options);
   }
 
-  , 'integer': function (schema, options) {
+  , 'integer': function integer(schema, options) {
     schema = schema || {type: 'integer'};
     return this._randomNumber(schema, options);
   }
 
-  , 'enum': function(schema) {
+  , 'enum': function $enum(schema) {
     return _.sample(schema.enum);
   }
 
-  , 'array': function(schema, options) {
+  , 'array': function array(schema, options) {
     options = options || {};
     schema = schema || {};
     var itemSchema = schema.items || {type: 'string'}
-      , itemType = itemSchema.type || ('enum' in itemSchema && 'enum')
-      , minItems = schema.minItems || 0
-      , maxItems = schema.maxItems || 10
+      , minItems = _default(schema, 'minItems', 0)
+      , maxItems = _default(schema, 'maxItems', 10)
       , len = _.random(minItems, maxItems);
 
     var self = this;
     return _.times(len, function () {
-      return self[itemType](itemSchema, options);
+      return self._generate(itemSchema, options);
     });
   }
 
-  , '_randomObject': function(options) {
-    var numKeys = _.random(options.minRandomKeys || 0, options.maxRandomKeys || 10);
-    var self = this;
+  , '_randomObject': function _randomObject(options) {
+    var minRandomKeys = _default(options, 'minRandomKeys', 0)
+      , maxRandomKeys = _default(options, 'maxRandomKeys', 10)
+      , numKeys = _.random(minRandomKeys, maxRandomKeys)
+      , self = this;
 
     var gens = [
       _.partial(this.array, {items: {type: 'integer'}})
@@ -195,7 +205,7 @@ JsonFromSchema.prototype._generators = {
       }, {}).valueOf();
   }
 
-  , 'object': function(schema, options) {
+  , 'object': function object(schema, options) {
 
     options = options || {};
     schema = schema || {};
@@ -204,9 +214,9 @@ JsonFromSchema.prototype._generators = {
       , required = schema.required || []
       , props = schema.properties && Object.keys(schema.properties) || []
       , patternProps = schema.patternProperties && Object.keys(schema.patternProperties) || []
-      , additionals = "additionalProperties" in schema ? !!schema.additionalProperties : true
-      , minPatternProps = options.minPatternProps || 0
-      , maxPatternProps = options.maxPatternProps || 10
+      , additionals = !!_default(schema, 'additionalProperties', true)
+      , minPatternProps = _default(options, 'minPatternProps', 0)
+      , maxPatternProps = _default(options, 'maxPatternProps', 10)
       , nonRequiredProps = _.difference(props, required)
       // generate all required properties plus a random amount of non-required properties
       , propsToGenerate = _.union(required, _.sample(nonRequiredProps, _.random(nonRequiredProps.length)));
@@ -214,8 +224,7 @@ JsonFromSchema.prototype._generators = {
     var obj = _.reduce(propsToGenerate, function(acc, propName) {
       var propSchema = schema.properties[propName];
 
-      var type = propSchema.type || propSchema.enum && 'enum';
-      acc[propName] = self[type](propSchema, options);
+      acc[propName] = self._generate(propSchema, options);
       return acc;
     }, {});
 
@@ -227,8 +236,7 @@ JsonFromSchema.prototype._generators = {
       })).reduce(function(acc, propPattern) {
           var propSchema = schema.patternProperties[propPattern];
           var propName = self.string({pattern: propPattern});
-          var type = propSchema.type || propSchema.enum && 'enum';
-          acc[propName] = self[type](propSchema, options);
+          acc[propName] = self._generate(propSchema, options);
           return acc;
         }, {}).valueOf();
       _.defaults(obj, ppObj);
@@ -241,7 +249,31 @@ JsonFromSchema.prototype._generators = {
 
     return obj;
   }
+
 };
+
+_generators._generate = _oneOfDecorator.bind(_generators)(function _generate(schema, options) {
+  schema = schema || {};
+  options = options || {};
+  var type = this._type(schema);
+  return this[type](schema, options);
+});
+
+JsonFromSchema.prototype._generators = _generators;
+
+function _oneOfDecorator(base) {
+  var self = this;
+  return function _oneOf(schema, options) {
+    if(schema.oneOf) {
+      var oneOfs = schema.oneOf;
+      var finalSchema = _.merge(_.cloneDeep(schema), _.sample(oneOfs));
+      delete finalSchema.oneOf;
+      return base.call(self, finalSchema, options);
+    } else {
+      return base.call(self, schema, options);
+    }
+  }
+}
 
 /**
  *
@@ -266,8 +298,7 @@ JsonFromSchema.prototype.generate = function generate(schemaId, options) {
     throw new ReferenceError("No schema with ID " + schemaId + " registered");
   }
 
-  var type = schema.type || schema.enum && 'enum';
-  return this._generators[type](schema, options);
+  return this._generators._generate(schema, options);
 };
 
 /**
