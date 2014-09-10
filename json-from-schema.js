@@ -8,6 +8,11 @@ var RandExpr = require('randexp');
 var util = require('util');
 var ins = _.partialRight(util.inspect, {depth: 5});
 
+function _stripFragment(uri) {
+  var last = uri.length - 1;
+  return uri[last] === '#' ? uri.substring(0, last) : uri;
+}
+
 var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasByIds, topSchema) {
   function isLocal(ref) {
     return ref[0] === '#';
@@ -17,10 +22,11 @@ var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasB
   var pointed;
   var $ref = schema.$ref;
   if ($ref) {
-    if (isLocal($ref)) { // JSON pointer
-      pointed = ptr.create($ref).get(topSchema);
+    var $refStripped = _stripFragment($ref);
+    if (isLocal($refStripped)) { // JSON pointer
+      pointed = ptr.create($refStripped).get(topSchema);
     } else { // not a JSON pointer so blindly assume it's an ID
-      pointed = schemasByIds[$ref];
+      pointed = schemasByIds[$refStripped];
     }
 
     if (!pointed) {
@@ -28,9 +34,10 @@ var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasB
     }
 
     if(pointed.$ref) {
+      var pointedStripped = _stripFragment(pointed.$ref);
       /* if the schema being pointed to isn't the one we started in, topSchema needs to be set to the schema being
        pointed to so its JSON pointers can be dereferenced properly */
-      _resolveRefs(pointed, schemasByIds, isLocal(pointed.$ref) ? topSchema : pointed);
+      _resolveRefs(pointed, schemasByIds, isLocal(pointedStripped) ? topSchema : pointed);
     }
 
     delete schema.$ref;
@@ -55,8 +62,7 @@ function JsonFromSchema(schemas) {
     if(!schema.id) {
       throw new Error("All schemas need ids");
     }
-    var idLen = schema.id.length;
-    var id = schema.id[idLen - 1] === '#' ? schema.id.substring(0, idLen - 1) : schema.id;
+    var id = _stripFragment(schema.id);
     acc[id] = _.cloneDeep(schema);
     return acc;
   }, {});
