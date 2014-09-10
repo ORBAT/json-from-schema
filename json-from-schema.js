@@ -210,8 +210,8 @@ var _generators = {
     options = options || {};
     schema = schema || {};
     var itemSchema = schema.items || {type: 'string'}
-      , minItems = _default(schema, 'minItems', 0)
-      , maxItems = _default(schema, 'maxItems', 10)
+      , minItems = _default(options, 'overrideMinItems', _default(schema, 'minItems', 0))
+      , maxItems = _default(options, 'overrideMaxItems', _default(schema, 'maxItems', 10))
       , len = _.random(minItems, maxItems);
 
     var self = this;

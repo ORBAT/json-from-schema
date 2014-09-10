@@ -60,6 +60,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
 * `charSet` (array): generate random strings using this character set. Each element of the array should be a single character.
 * `minRandomKeys` and `maxRandomKeys` (integers): the minimum and maximum number of randomly generated keys an object can have when additionalProperties is true
 * `minPatternProperties` and `maxPatternProperties` (integers): minimum and maximum number of pattern properties to randomly generate
+* `overrideMinItems` and `overrideMaxItems` (integers): override array minItems and maxItems for *all* arrays when generating array contents. Useful for generating a certain minimum amount of test data, for example.
 
 # Supported
 
