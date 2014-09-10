@@ -242,6 +242,41 @@ describe("JSON from schema", function() {
       notInCharSet.should.equal(0);
     });
 
+    it('should generate arrays', function () {
+      var schema = {
+        type: 'array'
+        , items: {type: 'integer', minimum: 0, maximum: 666}
+        , minItems: 1
+        , maxItems: 10
+      };
+
+      var arrays = _.times(20, function () {
+        return gen._generators.array(schema);
+      });
+
+      _validate(arrays, schema);
+    });
+
+    it('should generate arrays with overridden minItems and maxItems', function () {
+      var schema = {
+        type: 'array'
+        , items: {type: 'integer', minimum: 0, maximum: 666}
+        , minItems: 1
+        , maxItems: 10
+      };
+
+      var arrays = _.times(20, function () {
+        return gen._generators.array(schema, {overrideMinItems: 5, overrideMaxItems: 6});
+      });
+
+      _.each(arrays, function (array) {
+        array.length.should.be.above(4);
+        array.length.should.be.below(7);
+      });
+
+      _validate(arrays, schema);
+    });
+
     it("should generate strings with patterns", function () {
       var schema = {type: 'string', pattern: '^\\d{1,4}x\\d{1,4}$'};
       var strings = _.times(20, function () {
