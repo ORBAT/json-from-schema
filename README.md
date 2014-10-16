@@ -57,10 +57,11 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
 `generate()` takes an options object as its second parameter. The following options are supported:
 
 * `minCharCode` and `maxCharCode` (integers): random strings are generated so that the character codes are between these two values
-* `charSet` (array): generate random strings using this character set. Each element of the array should be a single character.
+* `charSet` (array): generate random strings using this character set. Each element of the array should be a single character
 * `minRandomKeys` and `maxRandomKeys` (integers): the minimum and maximum number of randomly generated keys an object can have when additionalProperties is true
 * `minPatternProperties` and `maxPatternProperties` (integers): minimum and maximum number of pattern properties to randomly generate
-* `overrideMinItems` and `overrideMaxItems` (integers): override array minItems and maxItems for *all* arrays when generating array contents. Useful for generating a certain minimum amount of test data, for example.
+* `overrideMinItems` and `overrideMaxItems` (integers): override array minItems and maxItems for *all* arrays when generating array contents. Useful for generating a certain minimum amount of test data, for example
+* `requireAll` (boolean): behave like all properties of an object were required
 
 # Supported
 
@@ -70,13 +71,19 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * format
     * ipv4
     * ipv6
+    * date-time
 * array
   * maxItems
   * minItems
+  * items (single schema)
 * number
+  * minimum
+  * maximum
 * integer
   * minimum
   * maximum
+  * exclusiveMinimum
+  * exclusiveMaximum
 * boolean
 * enum
 * object
@@ -95,6 +102,8 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * multipleOf
 * array
   * uniqueItems
+  * additionalItems
+  * items (array of schemas)
 * object
   * dependencies
   * maxProperties

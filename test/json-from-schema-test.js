@@ -366,6 +366,29 @@ describe("JSON from schema", function() {
     });
 
     describe('object generation', function () {
+
+      it('should allow behaving like all properties were required', function () {
+        var schema = {
+          id: 'metasyntactic'
+          , type: 'object'
+          , additionalProperties: false
+          , properties: {
+            a: {type: 'string'}
+            , b: {type: 'string'}
+            , c: {type: 'string'}
+            , d: {type: 'string'}
+          }
+        };
+        var gen = new jfs.JsonFromSchema([schema]);
+        var objs = _.times(20, function () {
+          return gen.generate('metasyntactic', {requireAll: true});
+        });
+        _.each(objs, function (obj) {
+          Object.keys(obj).should.deep.equal(['a', 'b', 'c', 'd']);
+        });
+        _validate(objs, schema);
+      });
+
       it('should generate objects (no schema references)', function () {
         var schema = {
           id: 'herp'

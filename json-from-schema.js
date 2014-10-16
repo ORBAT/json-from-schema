@@ -30,7 +30,8 @@ var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasB
     }
 
     if (!pointed) {
-      throw new ReferenceError("Pointer " + $ref + " didn't point to anything?");
+      throw new ReferenceError("Pointer " + $ref + " didn't point to anything? Schema was " + ins(schema) +
+                               " top schema was " + ins(topSchema));
     }
 
     if(pointed.$ref) {
@@ -226,20 +227,10 @@ var _generators = {
       , numKeys = _.random(minRandomKeys, maxRandomKeys)
       , self = this;
 
-    var gens = [
-      _.partial(this.array, {items: {type: 'integer'}})
-      , _.partial(this.array, {items: {type: 'number'}})
-      , _.partial(this.array, {items: {type: 'string'}})
-      , _.partial(this.string, {minLength: 0, maxLength: 15})
-      , _.partial(this._randomNumber, {type: 'integer'})
-      , _.partial(this._randomNumber, {type: 'number'})
-
-    ];
-
     return _(_.times(numKeys, function () {
       return self.string({minLength: 1, maxLength: 15}, options);
     })).reduce(function (acc, key) {
-        acc[key] = _.sample(gens).call(self, options);
+        acc[key] = _.sample(self._valueGenerators).call(self, options);
         return acc;
       }, {}).valueOf();
   }
@@ -258,7 +249,7 @@ var _generators = {
       , maxPatternProps = _default(options, 'maxPatternProps', 10)
       , nonRequiredProps = _.difference(props, required)
       // generate all required properties plus a random amount of non-required properties
-      , propsToGenerate = _.union(required, _.sample(nonRequiredProps, _.random(nonRequiredProps.length)));
+      , propsToGenerate = _default(options, 'requireAll', false) ? props : _.union(required, _.sample(nonRequiredProps, _.random(nonRequiredProps.length)));
 
     var obj = _.reduce(propsToGenerate, function(acc, propName) {
       var propSchema = schema.properties[propName];
@@ -290,6 +281,15 @@ var _generators = {
   }
 
 };
+
+_generators._valueGenerators = [
+  _.partial(_generators.array, {items: {type: 'integer'}})
+  , _.partial(_generators.array, {items: {type: 'number'}})
+  , _.partial(_generators.array, {items: {type: 'string'}})
+  , _.partial(_generators.string, {minLength: 0, maxLength: 15})
+  , _.partial(_generators._randomNumber, {type: 'integer'})
+  , _.partial(_generators._randomNumber, {type: 'number'})
+];
 
 _generators._generate = _oneOfDecorator(function _generate(schema, options) {
   schema = schema || {};
@@ -333,6 +333,8 @@ function _oneOfDecorator(base) {
  * options.minRandomKeys and options.maxRandomKeys (integers): the minimum and maximum number of randomly generated keys an object can have when additionalProperties is true
  *
  * options.minPatternProperties and options.maxPatternProperties (integers): minimum and maximum number of pattern properties to randomly generate
+ *
+ * options.requireAll (boolean): behave like all properties of an object were required
  *
  * @returns {object} randomly generated JSON object that complies with given schema
  */
