@@ -86,6 +86,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * exclusiveMaximum
 * boolean
 * enum
+* null
 * object
   * properties
   * patternProperties
