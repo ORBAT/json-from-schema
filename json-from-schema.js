@@ -293,6 +293,8 @@ _generators._valueGenerators = [
   , _.partial(_generators.string, {minLength: 0, maxLength: 15})
   , _.partial(_generators._randomNumber, {type: 'integer'})
   , _.partial(_generators._randomNumber, {type: 'number'})
+  , _generators.null
+  , _generators.boolean
 ];
 
 _generators._generate = _oneOfDecorator(function _generate(schema, options) {
