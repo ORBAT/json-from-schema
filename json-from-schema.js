@@ -143,6 +143,10 @@ var _generators = {
     return !!_.random(1);
   }
 
+  , 'null': function null_() {
+    return null;
+  }
+
   , '_format': function _format(schema, options) {
     var format = schema.format;
     if(this._formatters[format]) {
