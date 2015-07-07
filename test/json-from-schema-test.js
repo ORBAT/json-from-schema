@@ -195,6 +195,10 @@ describe("JSON from schema", function() {
       gen._generators.boolean().should.be.a('boolean');
     });
 
+    it('should generate nulls', function () {
+      should.equal(gen._generators.null(), null);
+    });
+
     it('should generate numbers', function () {
       var schema = {type: 'number', minimum: 13.5, maximum: 22.6};
       var nums = _.times(20, function () {
