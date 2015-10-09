@@ -297,13 +297,33 @@ _generators._valueGenerators = [
   , _generators.boolean
 ];
 
-_generators._generate = _oneOfDecorator(function _generate(schema, options) {
+_generators._generate = _typeArrayDecorator(_oneOfDecorator(function _generate(schema, options) {
   schema = schema || {};
   options = options || {};
   var type = this._type(schema);
   return this[type](schema, options);
-});
+}));
 
+/**
+ * Decorates a function(schema, options) so that it can handle a type keyword that is an array. This is done by
+ * picking one of the types at random and then substituting the type key with what was picked.
+ * @param {Function} base a function with the signature function(schema, options)
+ * @returns {Function} the base function with type array functionality
+ * @private
+ */
+function _typeArrayDecorator(base) {
+  return function _typeArray(schema, options) {
+    if(_.isArray(schema.type)) {
+      var type = _.sample(schema.type);
+      var finalSchema = _.cloneDeep(schema);
+      finalSchema.type = type;
+      return base.call(this, finalSchema, options);
+    } else {
+      return base.call(this, schema, options);
+    }
+
+  };
+}
 
 /**
  * Decorates a function(schema, options) so that it can handle anyOf/oneOf.

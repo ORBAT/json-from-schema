@@ -307,6 +307,27 @@ describe("JSON from schema", function() {
       _.keys(obj).length.should.be.below(16);
     });
 
+    it("should handle type keyword that's an array (issue #6)", function () {
+      var schema = {
+        id: 'cor'
+        , type: 'object'
+        , additionalProperties: false
+        , required: ['_id']
+        , properties: {
+          _id: {
+            type: ['object', 'string']
+          }
+        }
+      };
+
+      var objs = _.times(20, function () {
+        return gen._generators._generate(schema, {});
+      });
+      _.some(objs, _.flow(_.property('_id'),_.isString)).should.be.true;
+      _.some(objs, _.flow(_.property('_id'),_.isObject)).should.be.true;
+      _validate(objs, schema);
+    });
+
     it('should handle anyOf', function () {
       var schema = {
         id: 'cor'

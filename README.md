@@ -94,6 +94,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * additionalProperties (boolean)
 * oneOf
 * anyOf
+* type keyword with an array (`type: ['string', 'integer']`)
 
 # TODO
 
