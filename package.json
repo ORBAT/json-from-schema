@@ -22,8 +22,8 @@
   "license": "MIT",
   "dependencies": {
     "json-ptr": "0.1.1",
-    "randexp": "0.3.4",
-    "lodash": "^2.4"
+    "lodash": "^3.10.1",
+    "randexp": "0.3.4"
   },
   "devDependencies": {
     "mocha": "^1.18",
