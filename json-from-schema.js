@@ -254,7 +254,12 @@ var _generators = {
       , nonRequiredProps = _.difference(props, required)
       // generate all required properties plus a random amount of non-required properties
       , propsToGenerate = _default(options, 'requireAll', false) ? props : _.union(required, _.sample(nonRequiredProps, _.random(nonRequiredProps.length)));
-
+    
+    // check if additionalProperties was passed in as an option, and override schema if so
+    if (typeof options.additionalProperties !== 'undefined') {
+      additionals = options.additionalProperties;
+    }
+        
     var obj = _.reduce(propsToGenerate, function(acc, propName) {
       var propSchema = schema.properties[propName];
 
