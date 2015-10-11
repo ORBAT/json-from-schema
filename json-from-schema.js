@@ -136,7 +136,7 @@ var _generators = {
   }
 
   , '_type': function _type(schema) {
-    return schema.type || schema.enum && 'enum'
+    return schema.enum && 'enum' || schema.type
   }
 
   , 'boolean': function boolean() {
