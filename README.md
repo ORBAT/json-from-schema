@@ -90,6 +90,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
 * null
 * object
   * properties
+    * default values for properties
   * patternProperties
   * required
   * additionalProperties (boolean)

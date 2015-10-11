@@ -252,14 +252,17 @@ var _generators = {
       , minPatternProps = _default(options, 'minPatternProps', 0)
       , maxPatternProps = _default(options, 'maxPatternProps', 10)
       , nonRequiredProps = _.difference(props, required)
-      // generate all required properties plus a random amount of non-required properties
+      , haveDefaults = _.filter(props, function (prop) {
+        return schema.properties[prop].hasOwnProperty('default');
+      })
+    // generate all required properties plus a random amount of non-required properties
       , propsToGenerate = _default(options, 'requireAll', false) ? props : _.union(required, _.sample(nonRequiredProps, _.random(nonRequiredProps.length)));
-    
+
     // check if additionalProperties was passed in as an option, and override schema if so
     if (typeof options.additionalProperties !== 'undefined') {
       additionals = options.additionalProperties;
     }
-        
+
     var obj = _.reduce(propsToGenerate, function(acc, propName) {
       var propSchema = schema.properties[propName];
 
@@ -280,6 +283,12 @@ var _generators = {
         }, {}).valueOf();
       _.defaults(obj, ppObj);
     }
+
+    // generate defaults for the properties that have a defaut set and didn't already get generated
+    _.defaults(obj, _.reduce(_.difference(haveDefaults, propsToGenerate), function (acc, prop) {
+      acc[prop] = schema.properties[prop].default;
+      return acc;
+    }, {}));
 
     if(additionals) { // if additionalProperties is true, add some random properties to the object
       _.defaults(obj, this._randomObject(options));
