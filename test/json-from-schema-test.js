@@ -328,6 +328,37 @@ describe("JSON from schema", function() {
       _validate(objs, schema);
     });
 
+    it('should handle allOf', function () {
+      var schema = {
+        id: 'cor'
+        , type: 'object'
+        , additionalProperties: false
+        , required: ['one1', 'one2']
+        , properties: {
+          one1: {
+            allOf: [
+              {type: 'string'}
+              , {minLength: 10}
+            ]
+          }
+
+          , one2: {
+            type: 'string'
+            , allOf: [
+              {minLength: 5}
+              , {maxLength: 5}
+            ]
+          }
+        }
+      };
+
+      var objs = _.times(20, function () {
+        return gen._generators._generate(schema, {});
+      });
+
+      _validate(objs, schema);
+    });
+
     it('should handle anyOf', function () {
       var schema = {
         id: 'cor'

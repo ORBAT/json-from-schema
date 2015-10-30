@@ -63,6 +63,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
 * `overrideMinItems` and `overrideMaxItems` (integers): override array minItems and maxItems for *all* arrays when generating array contents. Useful for generating a certain minimum amount of test data, for example
 * `requireAll` (boolean): behave like all properties of an object were required
 * `additionalProperties` (boolean): overrides any/all additionalProperties keywords across the entire schema
+* `useZulu` (boolean): always use the Z "time zone" (e.g. `1965-12-13T11:34:13.713Z`) when generating strings using the `date-time` format
 
 # Supported
 
@@ -96,6 +97,7 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * additionalProperties (boolean)
 * oneOf
 * anyOf
+* allOf
 * type keyword with an array (`type: ['string', 'integer']`)
 
 # TODO
@@ -113,7 +115,6 @@ var sampleHerp = gen.generate('http://www.example.com/herp');
   * maxProperties
   * minProperties
   * additionalProperties (schema)
-* allOf
 * not
 * string
   * more formats

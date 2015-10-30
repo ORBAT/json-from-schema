@@ -8,14 +8,22 @@ var RandExpr = require('randexp');
 var util = require('util');
 var ins = _.partialRight(util.inspect, {depth: 5});
 
+// returns an array where the first element is always an URL without any fragments, and the
+// second element, if present, is a fragment (with #), making it a local JSON pointer
 function _stripFragment(uri) {
-  var last = uri.length - 1;
-  return uri[last] === '#' ? uri.substring(0, last) : uri;
+  var idx = uri.indexOf("#");
+  if(idx == -1) { // no fragment
+    return [uri];
+  } else if(idx == 0) { // just a fragment, i.e. local JSON pointer
+    return [null, uri];
+  }
+
+  return [uri.substring(0, idx), uri.substring(idx)];
 }
 
 var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasByIds, topSchema) {
-  function isLocal(ref) {
-    return ref[0] === '#';
+  function isLocal(stripped) {
+    return !stripped[0]; // i.e. a fragment (see _stripFragment)
   }
 
   topSchema = topSchema || schema;
@@ -23,10 +31,13 @@ var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasB
   var $ref = schema.$ref;
   if ($ref) {
     var $refStripped = _stripFragment($ref);
-    if (isLocal($refStripped)) { // JSON pointer
-      pointed = ptr.create($refStripped).get(topSchema);
-    } else { // not a JSON pointer so blindly assume it's an ID
-      pointed = schemasByIds[$refStripped];
+    if (!$refStripped[0]  && $refStripped[1]) { // local JSON pointer
+      pointed = ptr.create($refStripped[1]).get(topSchema);
+    } else { // not a local JSON pointer so blindly assume it's a proper schema ID
+      pointed = schemasByIds[$refStripped[0]];
+      if($refStripped[1]) { // JSON ptr into the pointed-to schema, not the top schema
+        pointed = ptr.create($refStripped[1]).get(pointed);
+      }
     }
 
     if (!pointed) {
@@ -42,11 +53,11 @@ var _resolveRefs = exports._resolveRefs = function _resolveRefs(schema, schemasB
     }
 
     delete schema.$ref;
-    _.assign(schema, pointed);
+    _.defaultsDeep(schema, _.cloneDeep(pointed));
   }
 
   // this schema didn't have a reference, so go through all subschemas
-  _.each(schema, function (subSchema, key) {
+  _.each(schema, function (subSchema) {
     if(_.isPlainObject(subSchema)) {
       _resolveRefs(subSchema, schemasByIds, topSchema);
     }
@@ -63,7 +74,7 @@ function JsonFromSchema(schemas) {
     if(!schema.id) {
       throw new Error("All schemas need ids");
     }
-    var id = _stripFragment(schema.id);
+    var id = _stripFragment(schema.id)[0];
     acc[id] = _.cloneDeep(schema);
     return acc;
   }, {});
@@ -89,7 +100,7 @@ function _pad(num) {
   return num.toString();
 }
 
-var _ipv6randExp = new RandExpr(ipv6re)
+var _ipv6randExp = new RandExpr(ipv6re);
 
 var _formatters = {
 
@@ -105,7 +116,7 @@ var _formatters = {
   , 'date-time': function dateTime(schema, options) {
     var ts = _.random(-1000000000000, Date.now());
     var isoStr = new Date(ts).toISOString();
-    if(Math.random() < 0.5) {
+    if(!options.useZulu && Math.random() < 0.5) {
       var offset = Math.random() < 0.5 ? '+' : '-';
       offset += _pad(_.random(0, 23)) + ":" + _pad(_.random(0, 59));
       isoStr = isoStr.substring(0, isoStr.length - 1) + offset;
@@ -311,12 +322,37 @@ _generators._valueGenerators = [
   , _generators.boolean
 ];
 
-_generators._generate = _typeArrayDecorator(_oneOfDecorator(function _generate(schema, options) {
+_generators._generate = _.compose(_allOfDecorator, _typeArrayDecorator, _oneOfDecorator)(function _generate(schema, options) {
   schema = schema || {};
   options = options || {};
   var type = this._type(schema);
+  if(!type) {
+    type = "object"
+  }
   return this[type](schema, options);
-}));
+});
+
+
+/**
+ * Decorates a function(schema, options) so that it can handle allOf.
+ * This is done by merging all schemas designated in allOf with the containing schema and then
+ * calling the base function with the merged schema (sans the allOf array)
+ *
+ * @param {Function} base a function with the signature function(schema, options)
+ * @returns {Function} the base function with allOf functionality
+ * @private
+ */
+function _allOfDecorator(base) {
+  return function _allOf(schema, options) {
+    if(_.isArray(schema.allOf)) {
+      var all = _.merge.apply(_, schema.allOf);
+      var finalSchema = _.merge(_.cloneDeep(schema), all);
+      return base.call(this, finalSchema, options);
+    } else {
+      return base.call(this, schema, options);
+    }
+  };
+}
 
 /**
  * Decorates a function(schema, options) so that it can handle a type keyword that is an array. This is done by
